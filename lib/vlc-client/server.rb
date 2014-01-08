@@ -98,10 +98,21 @@ module VLC
 
     # stop the VLC process when we exit
     def setup_traps
-      trap("EXIT") { stop }
-      trap("INT")  { stop }
-      trap("CLD")  { @pid = NullObject.new; @deamon = false }
-    end
+      trap("EXIT") do
+        stop
+        raise SystemExit
+      end
+
+      trap("INT") do
+        stop
+        raise SystemExit
+      end
+
+      trap("CLD") do
+        @pid = NullObject.new
+        @deamon = false
+      end
+    end # setup traps
 
   end
 end
