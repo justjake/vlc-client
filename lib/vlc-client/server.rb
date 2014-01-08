@@ -51,7 +51,7 @@ module VLC
       # allows usage in JRuby
       if RUBY_VERSION >= '1.9'
         @pid = Process::spawn(
-           (headless? ? 'clvc' : 'vlc'),
+           (headless? ? 'cvlc' : 'vlc'),
            '--extraintf', 'rc', '--rc-host', "#{@host}:#{@port}",
            :pgroup => detached,
            :in => '/dev/null',
@@ -60,6 +60,8 @@ module VLC
         return @pid
       end
 
+      # for Ruby 1.8 and below
+      rd, rw = IO.pipe
       if Process.fork      #parent
         wr.close
         @pid = rd.read.to_i
