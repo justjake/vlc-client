@@ -45,9 +45,21 @@ module VLC
     #
     def start(detached = false)
       return @pid if running?
-      rd, wr = IO.pipe
-
       detached ? @deamon = true : setup_traps
+
+      # use Process::spawn if we can
+      # allows usage in JRuby
+      if RUBY_VERSION >= '1.9'
+        @pid = Process::spawn(
+           (headless? ? 'clvc' : 'vlc'),
+           '--extraintf', 'rc', '--rc-host', "#{@host}:#{@port}",
+           :pgroup => detached,
+           :in => '/dev/null',
+             :out => '/dev/null',
+             :err => '/dev/null')
+        return @pid
+      end
+
       if Process.fork      #parent
         wr.close
         @pid = rd.read.to_i
