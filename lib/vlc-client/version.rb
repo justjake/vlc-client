@@ -1,3 +1,3 @@
 module VLC
-  VERSION = "0.0.3a1"
+  VERSION = "0.0.2"
 end
