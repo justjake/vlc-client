@@ -49,38 +49,14 @@ module VLC
 
       # use Process::spawn if we can
       # allows usage in JRuby
-      if RUBY_VERSION >= '1.9'
-        @pid = Process::spawn(
-           (headless? ? 'cvlc' : 'vlc'),
-           '--extraintf', 'rc', '--rc-host', "#{@host}:#{@port}",
-           :pgroup => detached,
-           :in => '/dev/null',
-             :out => '/dev/null',
-             :err => '/dev/null')
-        return @pid
-      end
-
-      # for Ruby 1.8 and below
-      rd, rw = IO.pipe
-      if Process.fork      #parent
-        wr.close
-        @pid = rd.read.to_i
-        rd.close
-        return @pid
-      else                 #child
-        rd.close
-
-        detach if detached #daemonization
-
-        wr.write(Process.pid)
-        wr.close
-
-        STDIN.reopen "/dev/null"
-        STDOUT.reopen "/dev/null", "a"
-        STDERR.reopen "/dev/null", "a"
-
-        Kernel.exec "#{headless? ? 'cvlc' : 'vlc'} --extraintf rc --rc-host #{@host}:#{@port}"
-      end
+      @pid = Process::spawn(
+         (headless? ? 'cvlc' : 'vlc'),
+         '--extraintf', 'rc', '--rc-host', "#{@host}:#{@port}",
+         :pgroup => detached,
+         :in => '/dev/null',
+           :out => '/dev/null',
+           :err => '/dev/null')
+      return @pid
     end
 
     # Start a VLC instance as a system deamon
@@ -110,27 +86,22 @@ module VLC
     def stop
       return nil if not running?
 
-      Process.kill('INT', pid = @pid)
+      pid = @pid
+      Process.kill('INT', @pid)
       @pid = NullObject.new
       @deamon = false
+
       pid
     end
 
   private
+
+    # stop the VLC process when we exit
     def setup_traps
       trap("EXIT") { stop }
       trap("INT")  { stop }
       trap("CLD")  { @pid = NullObject.new; @deamon = false }
     end
 
-    def detach
-     if RUBY_VERSION < "1.9"
-        Process.setsid
-        exit if Process.fork
-        Dir.chdir "/"
-      else
-        Process.daemon
-      end
-    end
   end
 end
